@@ -7,4 +7,5 @@ compile:
 	@gcc \
 	-std=c99 \
 	-o $(BINARY_PATH) \
-	hangman.c
+	hangman.c \
+	-lwinmm
