@@ -10,6 +10,7 @@
 #define PI 3.14159265358979323846
 #define SAMPLE_RATE 44100
 #define MAX_WORD_SIZE 128
+#define ERROR_MESSAGE BGB_RED "Error! Please make sure you enter what was requested" ANSI_RESET
 
 // AUDIO SETUP
 // create waveform structures
@@ -87,7 +88,10 @@ void play_sound_lose() {
 	play_sound(16, 200);
 }
 
-
+void flush_input_buffer() {
+	int c;
+	while ((c = getchar()) != '\n' && c != EOF);
+}
 
 
 int main() {
@@ -106,17 +110,29 @@ int main() {
 	// pre game configurations
 	play_sound_start();
 
-	// choose gamemode
-	puts("Choose your gamemode! For single player type 1, for multiplayer type 2\n");
-	int gamemode = 0;
-	scanf("%d", &gamemode);
-	//printf("Gamemode is: %d\n", gamemode);
+	// choose gameMode
+	int gameMode = 0;
+	for (;;) {
+		puts("Choose your gameMode! For single player type 1, for multiplayer type 2\n");
+		if(scanf("%d", &gameMode) == 0) {
+			puts(ERROR_MESSAGE);
+			flush_input_buffer();
+			continue;
+		} else if(gameMode != (1 || 2)) {
+			puts(ERROR_MESSAGE);
+			flush_input_buffer();
+			continue;
+		}
+		break;
+	}
+
+	//printf("Gamemode is: %d\n", gameMode);
 
 	char secretWord[MAX_WORD_SIZE] = {0};
 	int stringLength;
 
-	// assign string to secretWord depending on the gamemode
-	if(gamemode == 2) {
+	// assign string to secretWord depending on the gameMode
+	if(gameMode == 2) {
 		// from user input
 		puts("type your secret word and hit enter!");
 		scanf("%s", secretWord);
@@ -161,7 +177,7 @@ int main() {
 	for(int i = 0; i < stringLength; ++i) {
 		blankSpace[i] = '_';
 	}
-	if(gamemode == 2) {
+	if(gameMode == 2) {
 	blankSpace[stringLength + 1] = '\0';
 	printf("%s", blankSpace);
 	} else {
