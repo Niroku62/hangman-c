@@ -118,9 +118,11 @@ int main() {
 			puts(ERROR_MESSAGE);
 			flush_input_buffer();
 			continue;
-		} else if(gameMode != (1 || 2)) {
-			puts(ERROR_MESSAGE);
+		} else if (gameMode == 1 || gameMode == 2) {
 			flush_input_buffer();
+			break;
+		} else {
+			puts(ERROR_MESSAGE);
 			continue;
 		}
 		break;
