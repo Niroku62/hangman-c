@@ -1,0 +1,9 @@
+cow
+tree
+snow
+elephant
+bear
+rat
+otter
+cat
+marfushka

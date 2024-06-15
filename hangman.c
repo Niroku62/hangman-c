@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <windows.h>
 #include <math.h>
 #include <mmsystem.h>
+#include <time.h>
 #include "ansi_codes.h"
 
 #define PI 3.14159265358979323846
 #define SAMPLE_RATE 44100
+#define MAX_WORD_SIZE 128
 
 // AUDIO SETUP
 // create waveform structures
@@ -74,8 +77,8 @@ void play_sound_wrong() {
 void play_sound_win() {
 	play_sound(4, 600);
 	play_sound(4, 600);
-	play_sound(6, 800);
-	play_sound(8, 1000);
+	play_sound(8, 800);
+	play_sound(12, 1000);
 }
 
 void play_sound_lose() {
@@ -84,8 +87,13 @@ void play_sound_lose() {
 	play_sound(16, 200);
 }
 
+
+
+
 int main() {
+	
 	ansi_codes_enable();
+	
 	// assign values to wfx struct
 	wfx.nSamplesPerSec = SAMPLE_RATE;
 	wfx.wBitsPerSample = 16;
@@ -95,49 +103,100 @@ int main() {
 	wfx.nBlockAlign = (wfx.wBitsPerSample * wfx.nChannels) / 8;
 	wfx.nAvgBytesPerSec = wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
 
-	//play_sound_start();
+	// pre game configurations
+	play_sound_start();
 
-	// create secret word
-	char secretWord[128];
-	char * my_string = "hello";
-	puts("type your secret word and hit enter!");
-	scanf("%s", secretWord);
+	// choose gamemode
+	puts("Choose your gamemode! For single player type 1, for multiplayer type 2\n");
+	int gamemode = 0;
+	scanf("%d", &gamemode);
+	//printf("Gamemode is: %d\n", gamemode);
 
-	// create int for secret word length
+	char secretWord[MAX_WORD_SIZE] = {0};
 	int stringLength;
+
+	// assign string to secretWord depending on the gamemode
+	if(gamemode == 2) {
+		// from user input
+		puts("type your secret word and hit enter!");
+		scanf("%s", secretWord);
+		} else {
+		// from file
+		// open file
+		FILE * file;
+		file = fopen("word_list.txt", "r");
+		
+		// get amount of lines in the file
+		int amountOfLines = 0;
+		for(;fgets(secretWord, MAX_WORD_SIZE, file) != NULL;) {
+			++amountOfLines;
+		}
+		//printf("\namount of lines is: %d\n", amountOfLines);
+		
+		// generate a random number (between 1 and amount of lines)
+		srand(time(NULL));
+		int randomLine = (rand() % amountOfLines) + 1;
+		//printf("\nrandom line is %d\n", randomLine);
+		
+		// reset file pointer to beginning of file
+		rewind(file);
+
+		// assign word in a random line to secretWord 
+		int count = 0;
+		while (fgets(secretWord, MAX_WORD_SIZE, file)) {
+			++count;
+			//printf("\ncount is: %d", count);
+			if(count == randomLine) {
+					//printf("\nsecret word is: %s\nI ENTERED THE IF\n", secretWord);
+				break;
+			}
+		}
+		fclose(file);
+	}
+	// assign the length of secretWord to stringLength
 	stringLength = strlen(secretWord);
 
-	// creates and prints playfield array
-	char blankSpace[128] = {0};
+	// creates and prints playfield
+	char blankSpace[MAX_WORD_SIZE] = {0};
 	for(int i = 0; i < stringLength; ++i) {
 		blankSpace[i] = '_';
 	}
-	blankSpace[stringLength] = '\0';
+	if(gamemode == 2) {
+	blankSpace[stringLength + 1] = '\0';
 	printf("%s", blankSpace);
+	} else {
+	blankSpace[stringLength - 1] = '\0';
+	stringLength -= 1;
+	printf("%s", blankSpace);
+	}
 
-	// create variables to be used in the loop
+
+	// create variables to be used in the game loop
 	int foundCharactersCounter = 0;
 	int livesCounter = 0;
 	char wrongCharacters[8] = {0};
-	char correctCharacters[128] = {0};
+	char correctCharacters[MAX_WORD_SIZE] = {0};
 	char * checkCharacter = 0;
 
+	// game starts here
 	puts("\n\nguess the secret word!");
 	puts("-------------------------");
 
-	// starts main game loop
 	for(;;) {
 		// get character from user input
 		puts("enter your character");
 		char guessedCharacter;
 		scanf(" %c", &guessedCharacter);
+
+		// checks if character from user input was already used
 		if((checkCharacter = strchr(correctCharacters, guessedCharacter)) !=NULL) {
 			puts("character already found!");
 			continue;
 		}
-		
+		// initialize variables for strchr
 		char * CharacterPosition = secretWord;
 		CharacterPosition = strchr(CharacterPosition, guessedCharacter);
+
 		// loop checks if secret word contains the guessed Character
 		for(;;) {
 			if(CharacterPosition != NULL) {
@@ -158,7 +217,7 @@ int main() {
 			} else {
 				wrongCharacters[livesCounter] 	= guessedCharacter;
 				++livesCounter;
-				printf("\n" BGB_CYAN FGN_BLACK "a" "character not found!""\n" ANSI_RESET);
+				printf("\n" /*BGB_RED FGN_BLACK*/ "character not found!""\n" /*ANSI_RESET*/);
 				printf("remaining attemps: %d""\n", (7 - livesCounter));
 				play_sound_wrong();
 				printf("\nlist of wrong characters:%s\n\n", wrongCharacters);
@@ -175,6 +234,7 @@ int main() {
 		}
 		if(livesCounter == 7) {
 			printf("\n" BGB_RED FGN_BLACK "You Lose!" ANSI_RESET "\n");
+			printf("The secret word was: %s", secretWord);
 			play_sound_lose();
 			break;
 		}
